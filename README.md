@@ -1,4 +1,3 @@
 # ASC
-# ASC
-# ASC
-# ASC
+
+# Assembly x86 language
