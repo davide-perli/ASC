@@ -107,7 +107,7 @@ mov %eax, sum
 ;// Afisare adunare
 
 pusha
-push sum
+push sum            
 push $a 
 call printf
 add $8, %esp
