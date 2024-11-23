@@ -352,7 +352,7 @@ main:
                 adaugare_blocuri:
                     mov contor, %eax
                     cmp %eax, %edx
-                    je afisare_memorie
+                    je parcurgere_fisiere_get_add
 
                     mov file_descriptor, %eax
                     mov %eax, memory(,%esi,4)  # Salvare id in bloc curemt
@@ -374,6 +374,54 @@ main:
                     add $12, %esp
                     popa
                     jmp decrement_nr_fisiere
+
+
+                parcurgere_fisiere_get_add: 
+                mov $-1, %eax
+                mov %eax, start_poz
+
+                mov $-1, %eax
+                mov %eax, end_poz
+
+                mov $0, %esi
+                mov nr_total_blocks, %edx
+
+                get_blocuri_add:
+                    cmp %esi, %edx
+                    je afisare_memorie_get_add
+
+                    mov memory(,%esi,4), %eax
+                    cmp file_descriptor, %eax
+                    jne iesire_get_add
+
+                    mov start_poz, %eax
+                    cmp $-1, %eax
+                    jne modif_end_add
+
+                    mov %esi, start_poz
+
+                    modif_end_add:
+                        mov %esi, end_poz
+                        jmp incrementare_get_add
+
+                    iesire_get_add:
+                        mov start_poz, %eax
+                        cmp $-1, %eax
+                        jne afisare_memorie_get_add
+
+                    incrementare_get_add:
+                        inc %esi
+
+                jmp get_blocuri_add
+
+                afisare_memorie_get_add:
+                    pusha
+                    push end_poz
+                    push start_poz
+                    push $r
+                    call printf
+                    add $12, %esp
+                    popa
 
                 # Afisare mesaj i
                 afisare_memorie:
@@ -491,7 +539,7 @@ main:
                         add $12, %esp
                         popa
 
-                        jmp repetare
+                    jmp repetare
 
 
 
