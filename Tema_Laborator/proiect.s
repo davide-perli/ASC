@@ -1,7 +1,9 @@
 .data
     nr_total_blocks: .long 10              # Numar total de blocuri dupa exemplu
 
-    memory: .space 40       
+    memory: .space 40   
+
+    aux_memory: .space 40    
 
     block_size : .long 8                    # capacitatea de stocare a dispozitivului este data si fixata la 8MB. Capacitatea de stocare a dispozitivului este impartita in blocuri de cate 8kB fiecare
 
@@ -84,6 +86,10 @@
     r: .asciz "(%ld , %ld)\n"
 
     s: .asciz "(0, 0)\n"
+
+    t: .asciz "Memorie modificata: "
+
+    u: .asciz "%ld "
 
 .text
 
@@ -592,8 +598,95 @@ main:
                     jmp repetare
 
 
-
         defragmentation:
+                mov $0, %eax
+                mov %eax, contor
+                
+                mov $0, %esi
+                mov nr_total_blocks, %edx
+
+                sciere_memorie_aux:
+                    cmp %esi, %edx
+                    je modifica_memory
+
+                    mov memory(,%esi,4), %eax
+                    cmp $0, %eax
+                    je incrementare_contor_org
+
+                    mov memory(,%esi,4), %eax
+                    mov contor, %ebx
+                    mov %eax, aux_memory(,%ebx,4) #interschimbare valori din memorie org in memorie aux
+
+                    mov contor, %eax
+                    inc %eax
+                    mov %eax, contor
+
+                    incrementare_contor_org:
+                        inc %esi
+
+                    jmp sciere_memorie_aux
+
+                
+                modifica_memory:
+                    mov $0, %esi
+                    mov nr_total_blocks, %edx
+
+                    actualizare_memorie:
+                        cmp %esi, %edx
+                        je afisare_memorie_modificata
+
+                        mov contor, %ebx
+                        cmp %esi, %ebx
+                        jle memorie_zero
+
+                        mov aux_memory(,%esi,4), %eax
+                        mov %eax, memory(,%esi,4)
+
+                        jmp incrementare_contor_modificare
+
+                        memorie_zero:
+                            mov $0, %eax
+                            mov %eax, memory(,%esi,4)
+
+                        incrementare_contor_modificare:
+                            inc %esi 
+                    
+                    jmp actualizare_memorie
+
+
+                afisare_memorie_modificata:
+                    # Afisare mesaj t
+                    pusha
+                    push $t
+                    call printf
+                    add $4, %esp
+                    popa
+
+                mov $0, %edi 
+                loop_afisare_memorie_modificata:
+                    cmp nr_total_blocks, %edi
+                    je afisare_endline_modificare
+                    mov memory(,%edi,4), %eax
+
+                    # Afisare stare memorie, catve un element al vectorului pe rand
+                    pusha
+                    push %eax
+                    push $u
+                    call printf
+                    add $8, %esp
+                    popa
+                    inc %edi  
+
+                    jmp loop_afisare_memorie_modificata
+
+                    
+                    afisare_endline_modificare:
+                        pusha
+                        push $z
+                        call printf
+                        add $4, %esp
+                        popa
+                    jmp repetare
 
     repetare:
         mov nr_operatii, %eax

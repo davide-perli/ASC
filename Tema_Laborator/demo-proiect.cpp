@@ -140,7 +140,7 @@ void et_defragmentation_memory()
 
     for(int i = 0; i < no_total_blocks; i++)// actualizare
     {
-        if(i < j)
+        if(i <= j)
         {
             memory[i] = aux_memory[i];// memory devine ce se afla in aux_memory
         } else
