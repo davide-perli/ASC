@@ -409,6 +409,84 @@ main:
                     dec %ecx
                     jmp parcurgere_fisiere
 
+        get:
+            mov $-1, %eax
+            mov %eax, start_poz
+
+            mov $-1, %eax
+            mov %eax, end_poz
+
+            # Afisare input ID fiser get
+            pusha
+            push $e
+            call printf
+            add $4, %esp
+            popa
+
+            pusha
+            push $file_descriptor_get
+            push $get_id
+            call scanf
+            add $8, %esp
+            popa
+
+            parcurgere_fisiere_get: 
+                # Get id din memorie
+                mov $0, %esi
+                mov nr_total_blocks, %edx
+
+                get_blocuri:
+                    cmp %esi, %edx
+                    je afisare_memorie_get
+
+                    mov memory(,%esi,4), %eax
+                    cmp file_descriptor_get, %eax
+                    jne iesire_get
+
+                    mov start_poz, %eax
+                    cmp $-1, %eax
+                    jne modif_end
+
+                    mov %esi, start_poz
+
+                    modif_end:
+                        mov %esi, end_poz
+                        jmp incrementare_get
+
+                    iesire_get:
+                        mov start_poz, %eax
+                        cmp $-1, %eax
+                        jne afisare_memorie_get
+
+                    incrementare_get:
+                        inc %esi
+
+                jmp get_blocuri
+
+                afisare_memorie_get:
+                    mov start_poz, %eax
+                    cmp $-1, %eax
+                    jne get_gasit
+
+                    pusha
+                    push $s
+                    call printf
+                    add $4, %esp
+                    popa 
+
+                    jmp repetare
+
+                    get_gasit:
+                        pusha
+                        push end_poz
+                        push start_poz
+                        push $r
+                        call printf
+                        add $12, %esp
+                        popa
+
+                        jmp repetare
+
 
 
         # 0-fals, 1-true
@@ -512,86 +590,6 @@ main:
                     popa
 
                     jmp repetare
-
-
-
-        get:
-            mov $-1, %eax
-            mov %eax, start_poz
-
-            mov $-1, %eax
-            mov %eax, end_poz
-
-            # Afisare input ID fiser get
-            pusha
-            push $e
-            call printf
-            add $4, %esp
-            popa
-
-            pusha
-            push $file_descriptor_get
-            push $get_id
-            call scanf
-            add $8, %esp
-            popa
-
-            parcurgere_fisiere_get: 
-                # Get id din memorie
-                mov $0, %esi
-                mov nr_total_blocks, %edx
-
-                get_blocuri:
-                    cmp %esi, %edx
-                    je afisare_memorie_get
-
-                    mov memory(,%esi,4), %eax
-                    cmp file_descriptor_get, %eax
-                    jne iesire_get
-
-                    mov start_poz, %eax
-                    cmp $-1, %eax
-                    jne modif_end
-
-                    mov %esi, start_poz
-
-                    modif_end:
-                        mov %esi, end_poz
-                        jmp incrementare_get
-
-                    iesire_get:
-                        mov start_poz, %eax
-                        cmp $-1, %eax
-                        jne afisare_memorie_get
-
-                    incrementare_get:
-                        inc %esi
-
-                jmp get_blocuri
-
-                afisare_memorie_get:
-                    mov start_poz, %eax
-                    cmp $-1, %eax
-                    jne get_gasit
-
-                    pusha
-                    push $s
-                    call printf
-                    add $4, %esp
-                    popa 
-
-                    jmp repetare
-
-                    get_gasit:
-                        pusha
-                        push end_poz
-                        push start_poz
-                        push $r
-                        call printf
-                        add $12, %esp
-                        popa
-
-                        jmp repetare
 
 
 
