@@ -41,7 +41,7 @@ void et_add_file_to_memory(int id, int f_size)
     int free_count = 0;// pt a numara blocurile consecutive de zerouri care exista
     for(int i = 0; i < no_total_blocks; i++)
     {
-        if(memory[i] == 0)// am agsit o secventa care incepe cu zero ocupand de cel putin un indice din memorie
+        if(memory[i] == 0)// am gasit o secventa care incepe cu zero ocupand de cel putin un indice din memorie
         {
             if(next_available_block == -1)// daca inca nu am stabilit care e inceputul secventei, o marcam la prima aparitie a unui zero dupa valori diferite de zero
             {
@@ -72,7 +72,7 @@ void et_add_file_to_memory(int id, int f_size)
         cout<<"nu e destula memorie pentru adaugare fisier "<<id<<" pe "<<f_size<<" KB"<<endl;
     }
 }
-//verific in primul rand cate blocuri sunt asociate cu acel file descriptor
+// verific in primul rand cate blocuri sunt asociate cu acel file descriptor
 void et_delete_file_from_memory(int id)
 {
     bool found_file_to_delete = false;
@@ -91,6 +91,62 @@ void et_delete_file_from_memory(int id)
     } else
     {
         cout<<"fisierul nu a fost gasit"<<endl;
+    }
+}
+
+void et_get_file_positions(int id)
+{
+    int start = -1;
+    int end = -1;
+    for(int i = 0; i < no_total_blocks; i++)
+    {
+        if(memory[i] == id)
+        {
+            if(start == -1)
+            {
+                start = i;
+            }
+            end = i;// sfarsitul e mereu pozitia curenta
+        } else
+        {
+            if(start != -1)
+            {
+                break;
+            }
+        }
+    }
+
+    if(start == -1)// nu e gasit in memorie deci se returneaza (0, 0)
+    {
+        cout<<"(0, 0)"<<endl;
+    } else
+    {
+        cout<<"("<<start<<", "<<end<<")"<<endl;
+    }
+}
+
+void et_defragmentation_memory()
+{
+    int aux_memory[10];// memorie auxiliara pentru a stoca fisierele compact
+    int j = 0;// contor pt noua memorie
+    for(int i = 0; i < no_total_blocks; i++)// se retin doar fisierele/ descriptorii stocati contiguu care difera de zero, pentru a elimina spatierea inutila din memorie
+    {
+        if(memory[i] != 0)
+        {
+            aux_memory[j] = memory[i];
+            j++;
+        }
+    }
+
+    for(int i = 0; i < no_total_blocks; i++)// actualizare
+    {
+        if(i < j)
+        {
+            memory[i] = aux_memory[i];// memory devine ce se afla in aux_memory
+        } else
+        {
+            memory[i] = 0;
+        }
     }
 }
 
@@ -139,5 +195,21 @@ int main()
         }
         cout<<endl;
     }
+    do
+    {
+        cout<<"Pozitia fisierului cu id: ";
+        cin>>file_descriptor;
+        if(file_descriptor != 0)
+        {
+            et_get_file_positions(file_descriptor);
+        }
+    } while(file_descriptor==0);
+    cout<<"Starea memoriei dupa ce a fost defragmentata:";
+    et_defragmentation_memory();
+    for(int i = 0; i < no_total_blocks; i++)
+    {
+        cout<<memory[i]<<" ";
+    }
+    cout<<endl;
     return 0;
 }
