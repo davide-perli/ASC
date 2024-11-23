@@ -1,9 +1,10 @@
 .data
-    nr_total_blocks: .long 10              # Numar total de blocuri dupa exemplu
 
-    memory: .space 40   
+    nr_total_blocks: .long 1024              # Numar total de blocuri dupa exemplu (exemplu mic : 10)
 
-    aux_memory: .space 40    
+    memory: .space 4096                      # Exemplu mic 40
+
+    aux_memory: .space 4096                  # Exemply mic 40  
 
     block_size : .long 8                    # capacitatea de stocare a dispozitivului este data si fixata la 8MB. Capacitatea de stocare a dispozitivului este impartita in blocuri de cate 8kB fiecare
 
