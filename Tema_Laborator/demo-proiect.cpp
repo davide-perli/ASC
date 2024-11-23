@@ -6,7 +6,7 @@ using namespace std;
 capacitatea de stocare a dispozitivului este impartita in blocuri de cate 8kB fiecare*/
 
 // 8MB = 8 * 1024KB = 8192KB pt dispozitiv => deci are 1024 (8192/8KB=1024 nr_blocuri) de blocuri de cate 8KB
-// iar 1KB = 1024 bytes3
+// iar 1KB = 1024 bytes
 // un singur fisier stocat in bloc (daca dim fisierului e mai mica, ramane spatiu neocupat in bloc)
 // in schimb aceste dimensiuni sunt supraevaluate (vezi exemplu functionare pdf)
 // 8KB se reduce la un 8 bytes
@@ -17,7 +17,6 @@ capacitatea de stocare a dispozitivului este impartita in blocuri de cate 8kB fi
 int no_total_blocks = 10;
 int memory[10] = {0};
 int block_size = 8;
-int next_available_block = 0;
 
 void et_add_file_to_memory(int id, int f_size)
 {
@@ -30,17 +29,68 @@ void et_add_file_to_memory(int id, int f_size)
     {
         no_blocks_file += 1;
     }
+    if(no_blocks_file < 2)
+    {
+        no_blocks_file = 2;
+    }
     cout<<"Numarul de blocuri necesare fisier curent: "<<no_blocks_file<<endl;
-    if(next_available_block + no_blocks_file <= no_total_blocks)
+
+
+    // de aici am modificat putin logica
+    int next_available_block = -1;// stim de unde putem adauga fisierul (intr-o secventa de zerouri de oriunde din vectorul memory in care ar incapea ca marime)
+    int free_count = 0;// pt a numara blocurile consecutive de zerouri care exista
+    for(int i = 0; i < no_total_blocks; i++)
+    {
+        if(memory[i] == 0)// am agsit o secventa care incepe cu zero ocupand de cel putin un indice din memorie
+        {
+            if(next_available_block == -1)// daca inca nu am stabilit care e inceputul secventei, o marcam la prima aparitie a unui zero dupa valori diferite de zero
+            {
+                next_available_block = i;
+            }
+            free_count++;// incrementez pana la umratoare valoare diferita de zero
+            if(free_count == no_blocks_file)
+            {
+                break;// iesim din loop daca zecventa de zerouri consecutive e suficient de mare, nu e nevoie de un end_index
+            }
+        } else// se reseteaza la blocuri deja folosite adica diferite de zero
+        {
+            next_available_block = -1;
+            free_count = 0;
+        }
+    }
+
+    // am modificat putin conditia
+    if(next_available_block != -1)
     {
         for(int i = 0; i < no_blocks_file; i++)
         {
             memory[next_available_block + i] = id;
         }
-        next_available_block += no_blocks_file;
+        // am sters conditia next_available_block += no_blocks_file
     } else
     {
         cout<<"nu e destula memorie pentru adaugare fisier "<<id<<" pe "<<f_size<<" KB"<<endl;
+    }
+}
+//verific in primul rand cate blocuri sunt asociate cu acel file descriptor
+void et_delete_file_from_memory(int id)
+{
+    bool found_file_to_delete = false;
+    for(int i = 0; i < no_total_blocks; i++)
+    {
+        if(memory[i] == id)
+        {
+            memory[i] = 0;
+            found_file_to_delete = true;
+        }
+    }
+
+    if(found_file_to_delete)
+    {
+        cout<<"fisierul "<<id<<" a fost sters"<<endl;
+    } else
+    {
+        cout<<"fisierul nu a fost gasit"<<endl;
     }
 }
 
@@ -48,6 +98,33 @@ int main()
 {
     int file_descriptor, file_size;// file size de la tastatura se primeste in kb, deci necesita transformari
     int k;
+    cout<<"Numar de fisiere de testat adaugarea: ";
+    cin>>k;
+    for(int i = 0; i < k; i++)
+    {
+        cout<<"id: "; cin>>file_descriptor;
+        cout<<"size: "; cin>>file_size;
+        et_add_file_to_memory(file_descriptor, file_size);
+        cout<<"Starea memoriei dupa adaugarea fisierului: ";
+        for(int i = 0; i < no_total_blocks; i++)
+        {
+            cout<<memory[i]<<" ";
+        }
+        cout<<endl;
+    }
+    cout<<"Numar de fisiere de testat stergerea: ";// btw in cerinta se va sterge un fisier at one time deci nu are ce sa caute loop-ul cu for
+    cin>>k;
+    for(int i = 0; i < k; i++)
+    {
+        cout<<"id: "; cin>>file_descriptor;
+        et_delete_file_from_memory(file_descriptor);
+        cout<<"Starea memoriei dupa stergerea fisierului: ";
+        for(int i = 0; i < no_total_blocks; i++)
+        {
+            cout<<memory[i]<<" ";
+        }
+        cout<<endl;
+    }
     cout<<"Numar de fisiere de testat adaugarea: ";
     cin>>k;
     for(int i = 0; i < k; i++)

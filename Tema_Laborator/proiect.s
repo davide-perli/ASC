@@ -1,11 +1,11 @@
 .data
     nr_total_blocks: .long 10              # Numar total de blocuri dupa exemplu
 
-    memory: .long 0, 0, 0, 0, 0, 0, 0, 0, 0, 0         
+    memory: .space 40       
 
     block_size : .long 8                    # capacitatea de stocare a dispozitivului este data si fixata la 8MB. Capacitatea de stocare a dispozitivului este impartita in blocuri de cate 8kB fiecare
 
-    next_available_block: .long 0
+    next_available_block: .space 4
 
     nr_blocks_file: .space 4
 
@@ -14,6 +14,20 @@
     nr_operatii: .space 4
 
     tipul_operatiei: .space 4
+
+    free_count: .space 4
+
+    contor:  .space 4
+
+    nr_fisiere: .space 4
+
+    found_file_to_delete: .space 4
+
+    file_size: .space 4
+
+    file_descriptor: .space 4
+
+    file_descriptor_stergere: .space 4
 
     # Endline
     z: .asciz "\n"
@@ -28,21 +42,18 @@
 
     d: .asciz "Introduceti numarul de fisiere de testat adaugarea: "
 
-    nr_fisiere: .space 4
 
     c: .asciz "%ld"
 
     b: .asciz "Numar de fisiere de testat adaugarea: %ld\n"
 
     e: .asciz "ID: "
-    
-    file_descriptor: .space 4
 
     input_id: .asciz "%ld"
 
-    f: .asciz "Size (kb): "
+    delete_id: .asciz "%ld"
 
-    file_size: .space 4
+    f: .asciz "Size (kb): "
 
     input_file_size: .asciz "%ld"
 
@@ -53,6 +64,14 @@
     i: .asciz "Starea memoriei dupa adaugarea fisierului: "
 
     j: .asciz "%ld "
+
+    n: .asciz "Fisierul nu a fost gasit\n"
+
+    o: .asciz "Fisierul cu id-ul %ld a fost gasit\n"
+
+    p: .asciz "Starea memoriei dupa stergerea fisierului: "
+
+    q: .asciz "%ld "
 
 .text
 
@@ -103,6 +122,10 @@ main:
     jz iesire
 
     efectuare_operatii:
+
+        mov nr_operatii, %eax
+        cmp $0, %eax
+        jz iesire
 
         # Afisare string l
         pusha
@@ -176,7 +199,7 @@ main:
                 mov %eax, remainder_blocks_file
 
                 cmp $0, %ecx          
-                je iesire
+                je repetare
 
                 # Afisare si input ID fisier
 
@@ -222,8 +245,16 @@ main:
                 mov %eax, nr_blocks_file
 
                 skip_increment:
+                    mov nr_blocks_file, %eax
+                    cmp $2, %eax
+                    jg afisare_blocuri_necesare
 
-                # Afisare numar blocuri necesare
+                set_default_blocks:
+                    mov $2, %eax
+                    mov %eax, nr_blocks_file
+
+                afisare_blocuri_necesare:
+                # Afisare numar blocuri necesare (string g)
                 pusha
                 push nr_blocks_file
                 push $g
@@ -231,34 +262,89 @@ main:
                 add $8, %esp
                 popa
 
+                mov $-1, %eax
+                mov %eax, next_available_block
+
+                mov  $0, %eax
+                mov %eax, free_count
+
+                # Parcurgere vector
+
+                mov $0, %eax
+                mov %eax, contor
+
+                cautare_next_available_block:
+                    mov contor, %esi
+                    mov nr_total_blocks, %ebx
+                    cmp %esi, %ebx
+                    je verificare
+
+                    mov memory(,%esi,4), %eax
+                    cmp $0, %eax
+                    jnz reset_blocuri  
+                    
+                    mov next_available_block, %eax
+                    cmp $-1, %eax
+                    jne increment_free_count
+
+                    mov contor, %eax
+                    mov %eax, next_available_block
+
+                    increment_free_count:
+                        mov free_count, %eax
+                        inc %eax
+                        mov %eax, free_count
+
+                    mov free_count, %eax
+                    mov nr_blocks_file, %ebx
+                    cmp %eax, %ebx
+                    je verificare
+                    jmp increment_contor
+
+
+                    reset_blocuri:
+
+                        mov $-1, %eax
+                        mov %eax, next_available_block
+
+                        mov $0, %eax
+                        mov %eax, free_count            
+                increment_contor:
+                    mov contor, %eax
+                    inc %eax
+                    mov %eax, contor
+
+                jmp cautare_next_available_block
+
+
+
                 # Verificare memorie suficienta
-                mov next_available_block, %eax
-                add nr_blocks_file, %eax
-                cmp nr_total_blocks, %eax
-                jg memorie_insuficienta       # doar ">" decat ">="
+                verificare: 
+                    mov next_available_block, %eax
+                    cmp $-1, %eax
+                    je memorie_insuficienta       
 
 
                 # Adaugare ID fisier in memorie
                 mov next_available_block, %esi
                 mov nr_blocks_file, %edx
+                mov $0, %eax
+                mov %eax, contor
 
                 adaugare_blocuri:
-                    cmp $0, %edx
-                    je actualizare_bloc_liber
+                    mov contor, %eax
+                    cmp %eax, %edx
+                    je afisare_memorie
 
                     mov file_descriptor, %eax
                     mov %eax, memory(,%esi,4)  # Salvare id in bloc curemt
                     inc %esi                   # Next bloc
 
-                    dec %edx
+                    mov contor, %eax
+                    inc %eax
+                    mov %eax, contor
+
                     jmp adaugare_blocuri
-
-                actualizare_bloc_liber:
-                    mov next_available_block, %eax
-                    add nr_blocks_file, %eax         
-                    mov %eax, next_available_block   
-
-                    jmp afisare_memorie 
 
 
                 memorie_insuficienta:
@@ -313,10 +399,116 @@ main:
 
 
 
-
+        # 0-fals, 1-true
         stergere_fisiere:
+            mov $0, %eax
+            mov %eax, found_file_to_delete
+
+            mov $0, %eax
+            mov %eax, contor
+
+            # Afisare input ID fisier stergere
+            pusha
+            push $e
+            call printf
+            add $4, %esp
+            popa
+
+            pusha
+            push $file_descriptor_stergere
+            push $delete_id
+            call scanf
+            add $8, %esp
+            popa
+
+            parcurgere_fisiere_stergere: 
+                # Stergere id din memorie
+                mov $0, %esi
+                mov nr_total_blocks, %edx
+
+                stergere_blocuri:
+                    cmp %esi, %edx
+                    je afisare_memorie_stearsa
+
+                    mov memory(,%esi,4), %eax
+                    cmp file_descriptor_stergere, %eax
+                    jne incrementare_contor_stergere
+
+                    mov $0, %eax
+                    mov %eax, memory(,%esi,4)  # Salvare 0 in bloc curemt
+                    mov $1, %eax
+                    mov %eax, found_file_to_delete
+
+                    incrementare_contor_stergere:
+                        inc %esi
+
+                    jmp stergere_blocuri
+
+                afisare_memorie_stearsa:
+                    # Afisare mesaj p
+                    pusha
+                    push $p
+                    call printf
+                    add $4, %esp
+                    popa
+
+                mov $0, %edi 
+                loop_afisare_memorie_stearsa:
+                    cmp nr_total_blocks, %edi
+                    je afisare_endline_stergere
+                    mov memory(,%edi,4), %eax
+
+                    # Afisare stare memorie, catve un element al vectorului pe rand
+                    pusha
+                    push %eax
+                    push $q
+                    call printf
+                    add $8, %esp
+                    popa
+                    inc %edi  
+
+                    jmp loop_afisare_memorie_stearsa
+
+                    
+                    afisare_endline_stergere:
+                        pusha
+                        push $z
+                        call printf
+                        add $4, %esp
+                        popa
+
+
+            afisare_mesaj_stergere:
+                mov found_file_to_delete, %eax
+                cmp $1, %eax
+                je fisier_gasit
+
+                pusha
+                push $n
+                call printf
+                add $4, %esp
+                popa
+
+                jmp repetare
+
+                fisier_gasit:
+                    pusha
+                    push file_descriptor_stergere
+                    push $o
+                    call printf
+                    add $8, %esp
+                    popa
+
+
+
         get:
         defragmentation:
+
+    repetare:
+        mov nr_operatii, %eax
+        dec %eax
+        mov %eax, nr_operatii
+        jmp efectuare_operatii
 
 
 iesire:
