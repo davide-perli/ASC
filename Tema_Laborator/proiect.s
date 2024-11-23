@@ -29,6 +29,12 @@
 
     file_descriptor_stergere: .space 4
 
+    file_descriptor_get: .space 4
+
+    start_poz: .space 4
+    
+    end_poz: .space 4
+
     # Endline
     z: .asciz "\n"
 
@@ -53,6 +59,8 @@
 
     delete_id: .asciz "%ld"
 
+    get_id: .asciz "%ld"
+
     f: .asciz "Size (kb): "
 
     input_file_size: .asciz "%ld"
@@ -72,6 +80,10 @@
     p: .asciz "Starea memoriei dupa stergerea fisierului: "
 
     q: .asciz "%ld "
+
+    r: .asciz "(%ld , %ld)\n"
+
+    s: .asciz "(0, 0)\n"
 
 .text
 
@@ -499,9 +511,90 @@ main:
                     add $8, %esp
                     popa
 
+                    jmp repetare
+
 
 
         get:
+            mov $-1, %eax
+            mov %eax, start_poz
+
+            mov $-1, %eax
+            mov %eax, end_poz
+
+            # Afisare input ID fiser get
+            pusha
+            push $e
+            call printf
+            add $4, %esp
+            popa
+
+            pusha
+            push $file_descriptor_get
+            push $get_id
+            call scanf
+            add $8, %esp
+            popa
+
+            parcurgere_fisiere_get: 
+                # Get id din memorie
+                mov $0, %esi
+                mov nr_total_blocks, %edx
+
+                get_blocuri:
+                    cmp %esi, %edx
+                    je afisare_memorie_get
+
+                    mov memory(,%esi,4), %eax
+                    cmp file_descriptor_get, %eax
+                    jne iesire_get
+
+                    mov start_poz, %eax
+                    cmp $-1, %eax
+                    jne modif_end
+
+                    mov %esi, start_poz
+
+                    modif_end:
+                        mov %esi, end_poz
+                        jmp incrementare_get
+
+                    iesire_get:
+                        mov start_poz, %eax
+                        cmp $-1, %eax
+                        jne afisare_memorie_get
+
+                    incrementare_get:
+                        inc %esi
+
+                jmp get_blocuri
+
+                afisare_memorie_get:
+                    mov start_poz, %eax
+                    cmp $-1, %eax
+                    jne get_gasit
+
+                    pusha
+                    push $s
+                    call printf
+                    add $4, %esp
+                    popa 
+
+                    jmp repetare
+
+                    get_gasit:
+                        pusha
+                        push end_poz
+                        push start_poz
+                        push $r
+                        call printf
+                        add $12, %esp
+                        popa
+
+                        jmp repetare
+
+
+
         defragmentation:
 
     repetare:
