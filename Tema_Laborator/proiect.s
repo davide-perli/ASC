@@ -677,8 +677,7 @@ main:
                     popa
                     inc %edi  
 
-                    jmp loop_afisare_memorie_modificata
-
+                jmp loop_afisare_memorie_modificata
                     
                     afisare_endline_modificare:
                         pusha
