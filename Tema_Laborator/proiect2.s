@@ -34,9 +34,15 @@
 
     file_descriptor_get: .space 4
 
+    file_descriptor_get_all: .space 4
+
     start_poz: .space 4
     
     end_poz: .space 4
+
+    last_id: .space 4
+
+    contor_all: .space 4
 
     # Endline
     z: .asciz "\n"
@@ -94,8 +100,126 @@
 
     u: .asciz "%ld "
 
+    doua_puncte: .asciz "%ld: "
+
 
 .text
+
+    get_all_positions:
+
+        mov $-1, %eax
+        mov %eax, last_id
+
+        mov $0, %eax
+        mov %eax, contor_all
+
+
+        parcurgere_get_all:
+
+                mov nr_total_blocks, %ebx
+
+                mov contor_all, %ecx
+                cmp %ecx, %ebx
+
+                je afara
+
+
+                mov memory(,%ecx,4), %eax
+                cmp $0, %eax
+                je continuare_all
+
+                mov last_id, %ebx
+                cmp %ebx, %eax
+                je continuare_all
+
+                mov %eax, last_id
+
+                pusha
+                push last_id
+                push $doua_puncte
+                call printf
+                add $8, %esp
+                popa
+
+
+                mov $-1, %eax
+                mov %eax, start_poz
+
+                mov $-1, %eax
+                mov %eax, end_poz
+
+
+                mov last_id, %eax
+                mov %eax, file_descriptor_get_all
+
+                parcurgere_fisiere_get_all: 
+                    # Get id din memorie
+                    mov $0, %esi
+                    mov nr_total_blocks, %edx
+
+                    get_blocuri_all:
+                        cmp %esi, %edx
+                        je afisare_memorie_get_all
+
+                        mov memory(,%esi,4), %eax
+                        cmp file_descriptor_get_all, %eax
+                        jne iesire_get_all
+
+                        mov start_poz, %eax
+                        cmp $-1, %eax
+                        jne modif_end_all
+
+                        mov %esi, start_poz
+
+                        modif_end_all:
+                            mov %esi, end_poz
+                            jmp incrementare_get_all
+
+                        iesire_get_all:
+                            mov start_poz, %eax
+                            cmp $-1, %eax
+                            jne afisare_memorie_get_all
+
+                        incrementare_get_all:
+                            inc %esi
+
+                    jmp get_blocuri_all
+
+                    afisare_memorie_get_all:
+                        mov start_poz, %eax
+                        cmp $-1, %eax
+                        jne get_gasit_all
+
+                        pusha
+                        push $s
+                        call printf
+                        add $4, %esp
+                        popa 
+
+                        jmp continuare_all
+
+                        get_gasit_all:
+                            pusha
+                            push end_poz
+                            push start_poz
+                            push $r
+                            call printf
+                            add $12, %esp
+                            popa
+
+                        jmp continuare_all
+
+                    continuare_all:
+                        mov contor_all, %eax
+                        inc %eax
+                        mov %eax, contor_all
+                        jmp parcurgere_get_all
+
+
+        afara:
+            ret
+
+
 
 .global main
 
@@ -221,7 +345,7 @@ main:
                 mov %eax, remainder_blocks_file
 
                 cmp $0, %ecx          
-                je repetare
+                je afisare_add
 
                 # Afisare si input ID fisier
 
@@ -298,13 +422,6 @@ main:
                     mov %eax, nr_blocks_file
 
                 afisare_blocuri_necesare:
-                # Afisare numar blocuri necesare (string g)
-                pusha
-                push nr_blocks_file
-                push $g
-                call printf
-                add $8, %esp
-                popa
 
                 mov $-1, %eax
                 mov %eax, next_available_block
@@ -378,7 +495,7 @@ main:
                 adaugare_blocuri:
                     mov contor, %eax
                     cmp %eax, %edx
-                    je parcurgere_fisiere_get_add
+                    je decrement_nr_fisiere
 
                     mov file_descriptor, %eax
                     mov %eax, memory(,%esi,4)  # Salvare id in bloc curemt
@@ -399,95 +516,18 @@ main:
                     call printf
                     add $12, %esp
                     popa
-                    jmp decrement_nr_fisiere
+                    jmp decrement_nr_fisiere         
 
-
-                parcurgere_fisiere_get_add: 
-                mov $-1, %eax
-                mov %eax, start_poz
-
-                mov $-1, %eax
-                mov %eax, end_poz
-
-                mov $0, %esi
-                mov nr_total_blocks, %edx
-
-                get_blocuri_add:
-                    cmp %esi, %edx
-                    je afisare_memorie_get_add
-
-                    mov memory(,%esi,4), %eax
-                    cmp file_descriptor, %eax
-                    jne iesire_get_add
-
-                    mov start_poz, %eax
-                    cmp $-1, %eax
-                    jne modif_end_add
-
-                    mov %esi, start_poz
-
-                    modif_end_add:
-                        mov %esi, end_poz
-                        jmp incrementare_get_add
-
-                    iesire_get_add:
-                        mov start_poz, %eax
-                        cmp $-1, %eax
-                        jne afisare_memorie_get_add
-
-                    incrementare_get_add:
-                        inc %esi
-
-                jmp get_blocuri_add
-
-                afisare_memorie_get_add:
-                    pusha
-                    push end_poz
-                    push start_poz
-                    push $r
-                    call printf
-                    add $12, %esp
-                    popa
-
-                # Afisare mesaj i
-                afisare_memorie:
-                    pusha
-                    push $i
-                    call printf
-                    add $4, %esp
-                    popa
-
-                mov $0, %edi            
-                loop_afisare_memorie:
-                    cmp nr_total_blocks, %edi
-                    je afisare_endline
-                    mov memory(,%edi,4), %eax
-
-                    # Afisare stare memorie, catve un element al vectorului pe rand
-                    pusha
-                    push %eax
-                    push $j
-                    call printf
-                    add $8, %esp
-                    popa
-                    inc %edi  
-
-                
-
-                    jmp loop_afisare_memorie
-
-                    
-                    afisare_endline:
-                        pusha
-                        push $z
-                        call printf
-                        add $4, %esp
-                        popa
+                        
 
 
                 decrement_nr_fisiere:
                     dec %ecx
                     jmp parcurgere_fisiere
+
+                afisare_add:
+                    call get_all_positions
+                    jmp repetare
 
         get:
             mov $-1, %eax
