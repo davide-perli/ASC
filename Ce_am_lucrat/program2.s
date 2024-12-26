@@ -8,6 +8,7 @@ rest: .space 4
 n: .long 5
 v: .long 10, 20, 30, 40, 50
 
+
 ;// String cu mesaj
 x: .asciz "Program asssembly scris de mine cu talent\n"
 
