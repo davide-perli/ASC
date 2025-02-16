@@ -283,7 +283,8 @@ etloop:
 
 end_loop:
 
-;// Sys call pentru incheierea programului
+;// System call pentru incheierea programului
 mov $1, %eax       
 xor %ebx, %ebx      
-int $0x80           
+int $0x80      
+     
